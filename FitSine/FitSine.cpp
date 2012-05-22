@@ -23,17 +23,13 @@
 #include "Data.h"
 #include <cmath>
 #include <iostream>
-#include <gsl/gsl_sf_gamma.h>
 
 using namespace std;
 using namespace DNest3;
 
-const int FitSine::maxNumComponents = 20;
+const int FitSine::maxNumComponents = 10;
 
 FitSine::FitSine()
-:u_amplitudes(maxNumComponents)
-,frequencies(maxNumComponents)
-,phases(maxNumComponents)
 {
 
 }
@@ -42,9 +38,7 @@ void FitSine::fromPrior()
 {
 	if(!Data::get_instance().get_loaded())
 		cerr<<"# Warning: No data loaded!"<<endl;
-	mockData.resize(Data::get_instance().get_N());
-
-	onFraction = exp(log(1E-3) + log(1E3)*randomU());
+	mockData.assign(Data::get_instance().get_N(), 0.);
 
 	// Set limits on muAmplitudes
 	minLogMu = log(1E-3*Data::get_instance().get_ySig());
@@ -59,103 +53,196 @@ void FitSine::fromPrior()
 	rangeLogFreq = maxLogFreq - minLogFreq;
 
 	muAmplitudes = exp(minLogMu + rangeLogMu*randomU());
-	for(int i=0; i<maxNumComponents; i++)
+	numComponents = randInt(maxNumComponents + 1);
+
+	frequencies.clear();
+	amplitudes.clear();
+	phases.clear();
+	double A, f, phi;
+	for(int i=0; i<numComponents; i++)
 	{
-		u_amplitudes[i] = randomU();
-		frequencies[i] = exp(minLogFreq + rangeLogFreq*randomU());
-		phases[i] = 2*M_PI*randomU();
+		A = -muAmplitudes*log(randomU());
+		f = exp(minLogFreq + rangeLogFreq*randomU());
+		phi = 2*M_PI*randomU();
+
+		addComponent(A, f, phi);
+		amplitudes.push_back(A);
+		frequencies.push_back(f);
+		phases.push_back(phi);
+	}
+}
+
+double FitSine::perturb1()
+{
+	// Make a proposal for the new number of components
+	int diff = static_cast<int>
+			(round(maxNumComponents*pow(10., 1.5 - 6.*randomU())*randn()));
+	if(diff == 0)
+		diff = (randomU() <= 0.5)?(-1):(1);
+	int proposal = numComponents + diff;
+	proposal = mod(proposal, maxNumComponents + 1);
+	int actual_diff = proposal - numComponents;
+
+	if(actual_diff > 0)
+	{
+		double A, f, phi;
+		for(int i=0; i<actual_diff; i++)
+		{
+			A = -muAmplitudes*log(randomU());
+			f = exp(minLogFreq + rangeLogFreq*randomU());
+			phi = 2*M_PI*randomU();
+
+			addComponent(A, f, phi);
+			amplitudes.push_back(A);
+			frequencies.push_back(f);
+			phases.push_back(phi);
+			numComponents++;
+		}
+	}
+	else if(actual_diff < 0)
+	{
+		int which;
+		for(int i=0; i<-actual_diff; i++)
+		{
+			which = randInt(numComponents);
+			addComponent(-amplitudes[which],
+					frequencies[which], phases[which]);
+			amplitudes.erase(amplitudes.begin() + which);
+			frequencies.erase(frequencies.begin() + which);
+			phases.erase(phases.begin() + which);
+			numComponents--;
+		}
 	}
 
-	sigmaBoost = exp(randn());
-	dof = 10.*randomU();
+	staleness++;
+	return 0.;
+}
+
+double FitSine::perturb2()
+{
+	double chance = pow(10., 0.5 - 4.*randomU());
+	double scale = pow(10., 1.5 - 6.*randomU());
+
+	int which = randInt(3);
+	double temp;
+
+	if(which == 0)
+	{
+		for(int i=0; i<numComponents; i++)
+		{
+			if(randomU() <= chance)
+			{
+				if(chance < 1.)
+					addComponent(-amplitudes[i], frequencies[i],
+						phases[i]);
+				temp = 1. - exp(-amplitudes[i]/muAmplitudes);
+				temp += scale*randn();
+				temp = mod(temp, 1.);
+				amplitudes[i] = -muAmplitudes*log(1. - temp);
+				if(chance < 1.)
+					addComponent(amplitudes[i], frequencies[i],
+						phases[i]);
+			}
+		}
+	}
+	else if(which == 1)
+	{
+		for(int i=0; i<numComponents; i++)
+		{
+			if(randomU() <= chance)
+			{
+				if(chance < 1.)
+					addComponent(-amplitudes[i], frequencies[i],
+						phases[i]);
+				temp = log(frequencies[i]);
+				temp += rangeLogFreq*scale*randn();
+				temp = mod(temp - minLogFreq, rangeLogFreq)
+					+ minLogFreq;
+				frequencies[i] = exp(temp);
+				if(chance < 1.)
+					addComponent(amplitudes[i], frequencies[i],
+						phases[i]);
+			}
+		}
+	}
+	else
+	{
+		for(int i=0; i<numComponents; i++)
+		{
+			if(randomU() <= chance)
+			{
+				if(chance < 1.)
+					addComponent(-amplitudes[i], frequencies[i],
+						phases[i]);
+				phases[i] += 2*M_PI*scale*randn();
+				phases[i] = mod(phases[i], 2*M_PI);
+				if(chance < 1.)
+					addComponent(amplitudes[i], frequencies[i],
+						phases[i]);
+			}
+		}
+	}
+
+	if(chance < 1.)
+		staleness++;
+	else
+		calculateMockData();
+	return 0.;
+}
+
+double FitSine::perturb3()
+{
+	double logH = 0.;
+
+	double proposal = muAmplitudes;
+	proposal = log(proposal);
+	proposal += rangeLogMu*pow(10., 1.5 - 6.*randomU())*randn();
+	proposal = mod(proposal - minLogMu, rangeLogMu) + minLogMu;
+	proposal = exp(proposal);
+
+	int which = randInt(2);
+	if(which == 0)
+	{
+		double ratio = proposal/muAmplitudes;
+		for(int i=0; i<numComponents; i++)
+			amplitudes[i] *= ratio;
+		for(size_t i=0; i<mockData.size(); i++)
+			mockData[i] *= ratio;
+		staleness++;
+	}
+	else
+	{
+		double logMu1 = log(muAmplitudes);
+		double logMu2 = log(proposal);
+		for(int i=0; i<numComponents; i++)
+		{
+			if(amplitudes[i] < 0.)
+				cerr<<"# ERROR: Negative amplitude."<<endl;
+			logH -= -logMu1 - amplitudes[i]/muAmplitudes;
+			logH += -logMu2 - amplitudes[i]/proposal;
+		}
+	}
+
+	muAmplitudes = proposal;
+	return logH;
 }
 
 double FitSine::perturb()
 {
 	double logH = 0.;
 
-	int which = randInt(7);
+	int which = randInt(3);
 	if(which == 0)
 	{
-		onFraction = log(onFraction);
-		onFraction += log(1E3)*pow(10., 1.5 - 6.*randomU())*randn();
-		onFraction = mod(onFraction - log(1E-3), log(1E3)) + log(1E-3);
-		onFraction = exp(onFraction);
-		calculateMockData();
+		logH = perturb1();
 	}
 	else if(which == 1)
 	{
-		muAmplitudes = log(muAmplitudes);
-		muAmplitudes += rangeLogMu*pow(10., 1.5 - 6.*randomU())*randn();
-		muAmplitudes = mod(muAmplitudes - minLogMu,
-				rangeLogMu) + minLogMu;
-		muAmplitudes = exp(muAmplitudes);
-		calculateMockData();
+		logH = perturb2();
 	}
-	else if(which == 2)
+	else
 	{
-		double chance = pow(10., 0.5 - 4*randomU());
-		double scale = pow(10., 1.5 - 6*randomU());
-		for(int i=0; i<maxNumComponents; i++)
-		{
-			if(randomU() <= chance)
-			{
-				addComponent(-transform(u_amplitudes[i]), frequencies[i], phases[i]);
-				u_amplitudes[i] += scale*randn();
-				u_amplitudes[i] = mod(u_amplitudes[i], 1.);
-				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);				
-			}
-		}
-		staleness++;
-	}
-	else if(which == 3)
-	{
-		double chance = pow(10., 0.5 - 4*randomU());
-		double scale = pow(10., 1.5 - 6*randomU());
-		for(int i=0; i<maxNumComponents; i++)
-		{
-			if(randomU() <= chance)
-			{
-				addComponent(-transform(u_amplitudes[i]), frequencies[i], phases[i]);
-				frequencies[i] = log(frequencies[i]);
-				frequencies[i] += rangeLogFreq*scale*randn();
-				frequencies[i] = mod(frequencies[i]
-						- minLogFreq, rangeLogFreq)
-						+ minLogFreq;
-				frequencies[i] = exp(frequencies[i]);
-				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);
-			}
-		}
-		staleness++;
-	}
-	else if(which == 4)
-	{
-		double chance = pow(10., 0.5 - 4*randomU());
-		double scale = pow(10., 1.5 - 6*randomU());
-		for(int i=0; i<maxNumComponents; i++)
-		{
-			if(randomU() <= chance)
-			{
-				addComponent(-transform(u_amplitudes[i]), frequencies[i], phases[i]);
-				phases[i] += 2*M_PI*scale*randn();
-				phases[i] = mod(phases[i], 1.);
-				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);
-			}
-		}
-		staleness++;
-	}
-	else if(which == 5)
-	{
-		sigmaBoost = log(sigmaBoost);
-		logH -= -0.5*pow(sigmaBoost, 2);
-		sigmaBoost += pow(10., 1.5 - 6.*randomU())*randn();
-		logH += -0.5*pow(sigmaBoost, 2);
-		sigmaBoost = exp(sigmaBoost);
-	}
-	else if(which == 6)
-	{
-		dof += 10.*pow(10., 1.5 - 6.*randomU())*randn();
-		dof = mod(dof, 10.);
+		logH = perturb3();
 	}
 
 	if(staleness > 1000)
@@ -166,15 +253,13 @@ double FitSine::perturb()
 
 double FitSine::logLikelihood() const
 {
-	double logL = mockData.size()*
-		(gsl_sf_lngamma((dof + 1)/2) - gsl_sf_lngamma(dof/2)
-		-0.5*log(M_PI*dof));
+	double logL = -0.5*mockData.size()*log(2*M_PI);
 	for(size_t i=0; i<mockData.size(); i++)
 	{
 		double y = Data::get_instance().get_y(i);
-		double sig = sigmaBoost*Data::get_instance().get_sig(i);
+		double sig = Data::get_instance().get_sig(i);
 		logL += -log(sig);
-		logL += -(dof+1)/2*log(1 + 1./dof*pow((y - mockData[i])/sig, 2));
+		logL += -0.5*pow((y - mockData[i])/sig, 2);
 	}
 	return logL;
 }
@@ -186,8 +271,8 @@ void FitSine::calculateMockData()
 		mockData[i] = 0.;
 
 	// Add each frequency
-	for(int i=0; i<maxNumComponents; i++)
-		addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);
+	for(int i=0; i<numComponents; i++)
+		addComponent(amplitudes[i], frequencies[i], phases[i]);
 
 	staleness = 0;
 }
@@ -204,37 +289,31 @@ void FitSine::addComponent(double amplitude, double frequency, double phase)
 
 void FitSine::print(std::ostream& out) const
 {
-	out<<onFraction<<' '<<muAmplitudes<<' ';
-	for(int i=0; i<maxNumComponents; i++)
-		out<<transform(u_amplitudes[i])<<' ';
-	for(int i=0; i<maxNumComponents; i++)
+	out<<numComponents<<' '<<muAmplitudes<<' '<<staleness<<' ';
+
+	// Print amplitudes, use zero padding
+	for(int i=0; i<numComponents; i++)
+		out<<amplitudes[i]<<' ';
+	for(int i=numComponents; i<maxNumComponents; i++)
+		out<<0<<' ';
+
+	// Print frequencies, use zero padding
+	for(int i=0; i<numComponents; i++)
 		out<<frequencies[i]<<' ';
-	for(int i=0; i<maxNumComponents; i++)
+	for(int i=numComponents; i<maxNumComponents; i++)
+		out<<0<<' ';
+
+	// Print phases, use zero padding
+	for(int i=0; i<numComponents; i++)
 		out<<phases[i]<<' ';
-	out<<sigmaBoost<<' '<<dof<<' '<<staleness;
-}
-
-double FitSine::transform(double u_amplitude) const
-{
-	double A; // Amplitude to return
-	double t = 1. - onFraction;
-
-	// Compute flux
-	if(u_amplitude < t)
-		A = 0.;
-	else
-	{
-		double U = (u_amplitude - t)/onFraction; // U(0, 1)
-		A = -muAmplitudes*log(1. - U); // Must use CDF not 1-CDF
-	}
-	return A;
+	for(int i=numComponents; i<maxNumComponents; i++)
+		out<<0<<' ';
 }
 
 string FitSine::description() const
 {
-	string result("onFraction, muAmplitudes, ");
-	result += "amplitudes, frequencies, phases, sigmaBoost, ";
-	result += "dof, staleness";
+	string result("numComponents, muAmplitudes, staleness, ");
+	result += "amplitudes, frequencies, phases.";
 	return result;
 }
 
