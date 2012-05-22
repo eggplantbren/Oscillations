@@ -47,6 +47,9 @@ class FitSine:public DNest3::Model
 		// Actual phases
 		std::vector<double> phases;
 
+		// Error bar wrongness parameters
+		double sigmaBoost;
+
 		// Transform latent u_amplitude into an amplitude
 		double transform(double u_amplitude) const;
 

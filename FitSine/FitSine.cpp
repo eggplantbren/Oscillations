@@ -64,11 +64,15 @@ void FitSine::fromPrior()
 		frequencies[i] = exp(minLogFreq + rangeLogFreq*randomU());
 		phases[i] = 2*M_PI*randomU();
 	}
+
+	sigmaBoost = exp(randn());
 }
 
 double FitSine::perturb()
 {
-	int which = randInt(5);
+	double logH = 0.;
+
+	int which = randInt(6);
 	if(which == 0)
 	{
 		onFraction = log(onFraction);
@@ -135,11 +139,19 @@ double FitSine::perturb()
 			}
 		}
 	}
+	else if(which == 5)
+	{
+		sigmaBoost = log(sigmaBoost);
+		logH -= -0.5*pow(sigmaBoost, 2);
+		sigmaBoost += pow(10., 1.5 - 6.*randomU())*randn();
+		logH += -0.5*pow(sigmaBoost, 2);
+		sigmaBoost = exp(sigmaBoost);
+	}
 
 	if(staleness > 1000)
 		calculateMockData();
 
-	return 0.;
+	return logH;
 }
 
 double FitSine::logLikelihood() const
@@ -148,7 +160,7 @@ double FitSine::logLikelihood() const
 	for(size_t i=0; i<mockData.size(); i++)
 	{
 		double y = Data::get_instance().get_y(i);
-		double sig = Data::get_instance().get_sig(i);
+		double sig = sigmaBoost*Data::get_instance().get_sig(i);
 		logL += -log(sig);
 		logL += -0.5*pow((y - mockData[i])/sig, 2);
 	}
@@ -187,6 +199,7 @@ void FitSine::print(std::ostream& out) const
 		out<<frequencies[i]<<' ';
 	for(int i=0; i<maxNumComponents; i++)
 		out<<phases[i]<<' ';
+	out<<sigmaBoost;
 }
 
 double FitSine::transform(double u_amplitude) const
@@ -208,7 +221,7 @@ double FitSine::transform(double u_amplitude) const
 string FitSine::description() const
 {
 	string result("onFraction, muAmplitudes, ");
-	result += "amplitudes, frequencies, phases.";
+	result += "amplitudes, frequencies, phases, sigmaBoost.";
 	return result;
 }
 
