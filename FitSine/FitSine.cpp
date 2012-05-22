@@ -23,6 +23,7 @@
 #include "Data.h"
 #include <cmath>
 #include <iostream>
+#include <gsl/gsl_sf_gamma.h>
 
 using namespace std;
 using namespace DNest3;
@@ -66,13 +67,14 @@ void FitSine::fromPrior()
 	}
 
 	sigmaBoost = exp(randn());
+	dof = 10.*randomU();
 }
 
 double FitSine::perturb()
 {
 	double logH = 0.;
 
-	int which = randInt(6);
+	int which = randInt(7);
 	if(which == 0)
 	{
 		onFraction = log(onFraction);
@@ -104,6 +106,7 @@ double FitSine::perturb()
 				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);				
 			}
 		}
+		staleness++;
 	}
 	else if(which == 3)
 	{
@@ -123,6 +126,7 @@ double FitSine::perturb()
 				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);
 			}
 		}
+		staleness++;
 	}
 	else if(which == 4)
 	{
@@ -138,6 +142,7 @@ double FitSine::perturb()
 				addComponent(transform(u_amplitudes[i]), frequencies[i], phases[i]);
 			}
 		}
+		staleness++;
 	}
 	else if(which == 5)
 	{
@@ -146,6 +151,11 @@ double FitSine::perturb()
 		sigmaBoost += pow(10., 1.5 - 6.*randomU())*randn();
 		logH += -0.5*pow(sigmaBoost, 2);
 		sigmaBoost = exp(sigmaBoost);
+	}
+	else if(which == 6)
+	{
+		dof += 10.*pow(10., 1.5 - 6.*randomU())*randn();
+		dof = mod(dof, 10.);
 	}
 
 	if(staleness > 1000)
@@ -156,13 +166,15 @@ double FitSine::perturb()
 
 double FitSine::logLikelihood() const
 {
-	double logL = -0.5*mockData.size()*log(2*M_PI);
+	double logL = mockData.size()*
+		(gsl_sf_lngamma((dof + 1)/2) - gsl_sf_lngamma(dof/2)
+		-0.5*log(M_PI*dof));
 	for(size_t i=0; i<mockData.size(); i++)
 	{
 		double y = Data::get_instance().get_y(i);
 		double sig = sigmaBoost*Data::get_instance().get_sig(i);
 		logL += -log(sig);
-		logL += -0.5*pow((y - mockData[i])/sig, 2);
+		logL += -(dof+1)/2*log(1 + 1./dof*pow((y - mockData[i])/sig, 2));
 	}
 	return logL;
 }
@@ -199,7 +211,7 @@ void FitSine::print(std::ostream& out) const
 		out<<frequencies[i]<<' ';
 	for(int i=0; i<maxNumComponents; i++)
 		out<<phases[i]<<' ';
-	out<<sigmaBoost;
+	out<<sigmaBoost<<' '<<dof<<' '<<staleness;
 }
 
 double FitSine::transform(double u_amplitude) const
@@ -221,7 +233,8 @@ double FitSine::transform(double u_amplitude) const
 string FitSine::description() const
 {
 	string result("onFraction, muAmplitudes, ");
-	result += "amplitudes, frequencies, phases, sigmaBoost.";
+	result += "amplitudes, frequencies, phases, sigmaBoost, ";
+	result += "dof, staleness";
 	return result;
 }
 

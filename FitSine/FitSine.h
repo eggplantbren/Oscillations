@@ -49,6 +49,7 @@ class FitSine:public DNest3::Model
 
 		// Error bar wrongness parameters
 		double sigmaBoost;
+		double dof;
 
 		// Transform latent u_amplitude into an amplitude
 		double transform(double u_amplitude) const;
