@@ -22,7 +22,7 @@ Load models and display them
 import numpy as np
 import matplotlib.pyplot as plt
 
-maxNumComponents = 10
+maxNumComponents = 20
 data = np.atleast_2d(np.loadtxt('fake_data.txt'))
 sample = np.atleast_2d(np.loadtxt('posterior_sample.txt'))
 
@@ -52,15 +52,18 @@ for i in xrange(0, sample.shape[0]):
 	for j in xrange(0, maxNumComponents):
 		mockData += amplitudes[i, j]*np.sin(2*np.pi*frequencies[i, j]*data[:,0] + phases[i, j])
 
+	chisq = np.sum(((data[:,1] - mockData)/data[:,2])**2)/data.shape[0]
+
 	plt.subplot(2,1,1)
 	plt.hold(False)
 	plt.errorbar(data[:,0], data[:,1], yerr=data[:,2], fmt='bo')
 	plt.hold(True)
 	plt.plot(data[:,0], mockData, 'r')
-	plt.axis([-1., 101., -5., 5.])
+	plt.axis([-1., 101., -15., 15.])
 	plt.xlabel('Time')
 	plt.ylabel('y')
-	plt.title('Model %i, %i components.'%(i+1, numComponents[i]))
+	plt.title('Model %i, %i components. $\\chi^2/N = %.03f$'\
+			%(i+1, numComponents[i], chisq))
 
 	plt.subplot(2,1,2)
 	plt.hold(False)
