@@ -47,6 +47,9 @@ class FitSine:public DNest3::Model
 		// Actual phases
 		std::vector<double> phases;
 
+		// Error bar wrongness
+		double sigmaBoost, dof;
+
 		// Simulated data for comparison with actual data
 		std::vector<double> mockData;
 
@@ -64,6 +67,7 @@ class FitSine:public DNest3::Model
 		double perturb1();
 		double perturb2();
 		double perturb3();
+		double perturb4();
 
 	public:
 		FitSine();

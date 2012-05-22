@@ -23,7 +23,7 @@
 #include "Data.h"
 #include <cmath>
 #include <iostream>
-
+#include <gsl/gsl_sf_gamma.h>
 using namespace std;
 using namespace DNest3;
 
@@ -70,6 +70,9 @@ void FitSine::fromPrior()
 		frequencies.push_back(f);
 		phases.push_back(phi);
 	}
+
+	sigmaBoost = exp(randn());
+	dof = 10.*randomU();
 }
 
 double FitSine::perturb1()
@@ -227,11 +230,31 @@ double FitSine::perturb3()
 	return logH;
 }
 
+double FitSine::perturb4()
+{
+	double logH = 0.;
+	int which = randInt(2);
+	if(which == 0)
+	{
+		sigmaBoost = log(sigmaBoost);
+		logH -= -0.5*pow(sigmaBoost, 2);
+		sigmaBoost += pow(10., 1.5 - 6.*randomU())*randn();
+		logH += -0.5*pow(sigmaBoost, 2);
+		sigmaBoost = exp(sigmaBoost);
+	}
+	else
+	{
+		dof += 10.*pow(10., 1.5 - 6.*randomU())*randn();
+		dof = mod(dof, 10.);
+	}
+	return logH;
+}
+
 double FitSine::perturb()
 {
 	double logH = 0.;
 
-	int which = randInt(3);
+	int which = randInt(4);
 	if(which == 0)
 	{
 		logH = perturb1();
@@ -240,9 +263,13 @@ double FitSine::perturb()
 	{
 		logH = perturb2();
 	}
-	else
+	else if(which == 2)
 	{
 		logH = perturb3();
+	}
+	else
+	{
+		logH = perturb4();
 	}
 
 	if(staleness > 1000)
@@ -253,13 +280,17 @@ double FitSine::perturb()
 
 double FitSine::logLikelihood() const
 {
-	double logL = -0.5*mockData.size()*log(2*M_PI);
+	double logL = mockData.size()*
+		(gsl_sf_lngamma((dof + 1.)/2) - gsl_sf_lngamma(dof/2)
+		-0.5*log(M_PI*dof));
+
 	for(size_t i=0; i<mockData.size(); i++)
 	{
 		double y = Data::get_instance().get_y(i);
-		double sig = Data::get_instance().get_sig(i);
+		double sig = sigmaBoost*Data::get_instance().get_sig(i);
 		logL += -log(sig);
-		logL += -0.5*pow((y - mockData[i])/sig, 2);
+		logL += -(dof+1.)/2*
+			log(1. + 1./dof*pow((y - mockData[i])/sig, 2));
 	}
 	return logL;
 }
@@ -289,7 +320,8 @@ void FitSine::addComponent(double amplitude, double frequency, double phase)
 
 void FitSine::print(std::ostream& out) const
 {
-	out<<numComponents<<' '<<muAmplitudes<<' '<<staleness<<' ';
+	out<<numComponents<<' '<<muAmplitudes<<' ';
+	out<<sigmaBoost<<' '<<dof<<' '<<staleness<<' ';
 
 	// Print amplitudes, use zero padding
 	for(int i=0; i<numComponents; i++)
@@ -312,7 +344,7 @@ void FitSine::print(std::ostream& out) const
 
 string FitSine::description() const
 {
-	string result("numComponents, muAmplitudes, staleness, ");
+	string result("numComponents, muAmplitudes, sigmaBoost, dof, staleness, ");
 	result += "amplitudes, frequencies, phases.";
 	return result;
 }

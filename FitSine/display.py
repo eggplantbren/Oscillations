@@ -28,10 +28,19 @@ sample = np.atleast_2d(np.loadtxt('posterior_sample.txt'))
 
 start = 0
 
-onFraction = sample[:, start]
+numComponents = sample[:, start].astype('int')
 start += 1
 
 muAmplitudes = sample[:, start]
+start += 1
+
+sigmaBoost = sample[:, start]
+start += 1
+
+dof = sample[:, start]
+start += 1
+
+staleness = sample[:, start]
 start += 1
 
 amplitudes = sample[:, start:start+maxNumComponents]
@@ -43,16 +52,12 @@ start += maxNumComponents
 phases = sample[:, start:start+maxNumComponents]
 start += maxNumComponents
 
-numComponents = (amplitudes > 0.).sum(axis=1)
-
 plt.ion()
 for i in xrange(0, sample.shape[0]):
 	
 	mockData = np.zeros(data.shape[0])
-	for j in xrange(0, maxNumComponents):
+	for j in xrange(0, numComponents[i]):
 		mockData += amplitudes[i, j]*np.sin(2*np.pi*frequencies[i, j]*data[:,0] + phases[i, j])
-
-	chisq = np.sum(((data[:,1] - mockData)/data[:,2])**2)/data.shape[0]
 
 	plt.subplot(2,1,1)
 	plt.hold(False)
@@ -62,8 +67,7 @@ for i in xrange(0, sample.shape[0]):
 	plt.axis([-1., 101., -15., 15.])
 	plt.xlabel('Time')
 	plt.ylabel('y')
-	plt.title('Model %i, %i components. $\\chi^2/N = %.03f$'\
-			%(i+1, numComponents[i], chisq))
+	plt.title('Model %i, %i components.'%(i+1, numComponents[i]))
 
 	plt.subplot(2,1,2)
 	plt.hold(False)
