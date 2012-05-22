@@ -56,7 +56,7 @@ for i in xrange(0, sample.shape[0]):
 
 	plt.subplot(2,1,1)
 	plt.hold(False)
-	plt.errorbar(data[:,0], data[:,1], yerr=data[:,2], fmt='bo')
+	plt.errorbar(data[:,0], data[:,1], yerr=data[:,2], fmt='b.')
 	plt.hold(True)
 	plt.plot(data[:,0], mockData, 'r')
 	plt.axis([-1., 101., -15., 15.])
