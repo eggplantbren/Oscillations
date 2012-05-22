@@ -24,3 +24,9 @@ weights.txt
 # Python bytecode
 *.pyc
 
+# Latex stuff
+*.aux
+*.log
+*.dvi
+*.pdf
+
