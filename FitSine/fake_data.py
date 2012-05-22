@@ -26,18 +26,32 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 	rng.seed(0)
 
-	t = np.linspace(0., 100., 101)
+	t = np.linspace(0., 100., 1001)
+	y = np.zeros(t.shape)
 
-	# Noise free data
-	y = np.sin(t)
+	# Number of components
+	N = 10
+
+	# Frequencies
+	f = np.exp(np.log(0.1) + rng.randn(N))
+
+	# Amplitudes
+	A = -np.log(rng.rand(N))
+
+	# Phases
+	phi = 2*np.pi*rng.rand(N)
+	
+	# Add components to the fake data
+	for i in xrange(0, N):
+		y += A[i]*np.sin(2*np.pi*f[i]*t + phi[i])
 
 	# Errorbars
-	sig = 0.3*np.ones(t.size)
+	sig = 1.*np.ones(t.size)
 
 	# Add noise
 	y += sig*rng.randn(t.size)
 
 	np.savetxt('fake_data.txt', np.vstack([t, y, sig]).T)
-	plt.errorbar(t, y, yerr=sig, fmt='bo')
+	plt.errorbar(t, y, yerr=sig, fmt='b.')
 	plt.show()
 
