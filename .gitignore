@@ -13,6 +13,7 @@
 
 # Executables
 main
+FitSine
 
 # DNest output
 sample.txt
@@ -20,6 +21,7 @@ sample_info.txt
 levels.txt
 posterior_sample.txt
 weights.txt
+logfile
 
 # Python bytecode
 *.pyc
