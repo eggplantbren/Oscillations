@@ -15,12 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DNest3. If not, see <http://www.gnu.org/licenses/>.
 
-# Import postprocess from two directories up
-# http://stackoverflow.com/a/9806045
-import os
-parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-parentdir = os.path.dirname(parentdir)
-os.sys.path.insert(0, parentdir) 
 import postprocess
+postprocess.postprocess()
 import display
 
