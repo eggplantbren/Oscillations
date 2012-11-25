@@ -3,7 +3,7 @@
 
 # Optimized
 CFLAGS = -O2 -Wall -Wextra -ansi -pedantic -DNDEBUG
-LIBS = -ldnest3 -lgsl -lgslcblas -lboost_thread-mt
+LIBS = -ldnest3 -lgsl -lgslcblas -lboost_thread -lboost_system
 
 default:
 	# Compile
