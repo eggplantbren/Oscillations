@@ -21,8 +21,15 @@
 \end{eqnarray}
 where
 \begin{eqnarray}
-N(t) \sim \mathcal{N}(0, 1)
+N(t) \sim \mathcal{N}(0, 1).
 \end{eqnarray}
+Letting $v = \frac{dy}{dt}$, this can be written:
+\begin{eqnarray}
+\frac{dy}{dt} &=& v \\
+\frac{dv}{dt} &=& -\omega^2 y - \frac{1}{\tau}\frac{dy}{dt}
++ \beta N(t)\frac{1}{\sqrt{dt}}.
+\end{eqnarray}
+
 
 \end{document}
 

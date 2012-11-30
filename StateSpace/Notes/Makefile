@@ -1,5 +1,6 @@
 default:
-	latex ms
-	latex ms
-	dvipdf ms
+	pdflatex ms
+	pdflatex ms
+	pdflatex ms
+
 

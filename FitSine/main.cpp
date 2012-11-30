@@ -27,7 +27,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
 	Data::get_instance().load("fake_data.txt");
-	DNest3::start<FitSine>(argc, argv);
+	DNest3::start_mt<FitSine>(argc, argv);
 	return 0;
 }
 
