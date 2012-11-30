@@ -3,16 +3,16 @@
 
 # Optimized
 CFLAGS = -O2 -Wall -Wextra -ansi -pedantic -DNDEBUG
-LIBS = -ldnest3 -lgsl -lgslcblas
+LIBS = -ldnest3 -lgsl -lgslcblas -lboost_thread -lboost_system
 
 default:
 	# Compile
-	g++ $(CFLAGS) -I../.. -c main.cpp
-	g++ $(CFLAGS) -I../.. -c FitSine.cpp
-	g++ $(CFLAGS) -I../.. -c Data.cpp
+	g++ $(CFLAGS) -c main.cpp
+	g++ $(CFLAGS) -c FitSine.cpp
+	g++ $(CFLAGS) -c Data.cpp
 
 	# Link
-	g++ -L../.. -o main *.o $(LIBS)
+	g++ -o main *.o $(LIBS)
 
 clean:
 	rm -f main *.o
