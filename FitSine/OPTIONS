@@ -1,8 +1,8 @@
 # File containing parameters for DNest3
 # Put comments at the top, or at the end of the line.
 1	# Number of particles
-30000	# new level interval
-30000	# save interval
+50000	# new level interval
+50000	# save interval
 1000	# threadSteps
 150	# maximum number of levels
 1	# Backtracking scale length (lambda in the paper)
