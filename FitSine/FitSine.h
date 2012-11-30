@@ -48,7 +48,7 @@ class FitSine:public DNest3::Model
 		std::vector<double> phases;
 
 		// Error bar wrongness
-		double sigmaBoost, dof;
+		double sigmaBoost, nu;
 
 		// Simulated data for comparison with actual data
 		std::vector<double> mockData;

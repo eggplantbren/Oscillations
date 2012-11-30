@@ -71,8 +71,8 @@ void FitSine::fromPrior()
 		phases.push_back(phi);
 	}
 
-	sigmaBoost = exp(randn());
-	dof = 10.*randomU();
+	sigmaBoost = exp(log(1.) + log(100.)*randomU());
+	nu = exp(log(0.5) + log(200.)*randomU());
 }
 
 double FitSine::perturb1()
@@ -237,15 +237,16 @@ double FitSine::perturb4()
 	if(which == 0)
 	{
 		sigmaBoost = log(sigmaBoost);
-		logH -= -0.5*pow(sigmaBoost, 2);
-		sigmaBoost += pow(10., 1.5 - 6.*randomU())*randn();
-		logH += -0.5*pow(sigmaBoost, 2);
+		sigmaBoost += log(100.)*pow(10., 1.5 - 6.*randomU())*randn();
+		sigmaBoost = mod(sigmaBoost - log(1.), log(100.)) + log(1.);
 		sigmaBoost = exp(sigmaBoost);
 	}
 	else
 	{
-		dof += 10.*pow(10., 1.5 - 6.*randomU())*randn();
-		dof = mod(dof, 10.);
+		nu = log(nu);
+		nu += log(200.)*pow(10., 1.5 - 6.*randomU())*randn();
+		nu = mod(nu - log(0.5), log(200.)) + log(0.5);
+		nu = exp(nu);
 	}
 	return logH;
 }
@@ -281,16 +282,16 @@ double FitSine::perturb()
 double FitSine::logLikelihood() const
 {
 	double logL = mockData.size()*
-		(gsl_sf_lngamma((dof + 1.)/2) - gsl_sf_lngamma(dof/2)
-		-0.5*log(M_PI*dof));
+		(gsl_sf_lngamma((nu + 1.)/2) - gsl_sf_lngamma(nu/2)
+		-0.5*log(M_PI*nu));
 
 	for(size_t i=0; i<mockData.size(); i++)
 	{
 		double y = Data::get_instance().get_y(i);
 		double sig = sigmaBoost*Data::get_instance().get_sig(i);
 		logL += -log(sig);
-		logL += -(dof+1.)/2*
-			log(1. + 1./dof*pow((y - mockData[i])/sig, 2));
+		logL += -(nu+1.)/2*
+			log(1. + 1./nu*pow((y - mockData[i])/sig, 2));
 	}
 	return logL;
 }
@@ -321,7 +322,7 @@ void FitSine::addComponent(double amplitude, double frequency, double phase)
 void FitSine::print(std::ostream& out) const
 {
 	out<<numComponents<<' '<<muAmplitudes<<' ';
-	out<<sigmaBoost<<' '<<dof<<' '<<staleness<<' ';
+	out<<sigmaBoost<<' '<<nu<<' '<<staleness<<' ';
 
 	// Print amplitudes, use zero padding
 	for(int i=0; i<numComponents; i++)
@@ -344,7 +345,7 @@ void FitSine::print(std::ostream& out) const
 
 string FitSine::description() const
 {
-	string result("numComponents, muAmplitudes, sigmaBoost, dof, staleness, ");
+	string result("numComponents, muAmplitudes, sigmaBoost, nu, staleness, ");
 	result += "amplitudes, frequencies, phases.";
 	return result;
 }
