@@ -34,10 +34,10 @@ class Data
 		bool loaded;
 
 		// The data
-		std::vector<double> t, y, sig, inverseVariance;
+		std::vector<double> f, y;
 
 		// Summary statistics
-		double tRange, yMean, ySig;
+		double fRange;
 
 		// Compute the summary statistics from the data
 		void computeSummaries();
@@ -51,12 +51,9 @@ class Data
 
 		// Getters
 		bool get_loaded() { return loaded; }
-		double get_t(int i) { return t[i]; }
+		double get_f(int i) { return f[i]; }
 		double get_y(int i) { return y[i]; }
-		double get_sig(int i) { return sig[i]; }
-		double get_tRange() { return tRange; }
-		double get_yMean() { return yMean; }
-		double get_ySig() { return ySig; }
+		double get_fRange() { return fRange; }
 		int get_N() { return static_cast<int>(y.size()); }
 
 	// Static stuff for singleton use
