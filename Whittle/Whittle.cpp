@@ -264,8 +264,9 @@ double Whittle::logLikelihood() const
 void Whittle::calculateMockData()
 {
 	// Zero the mock data
+	// Actually, put in known background
 	for(size_t i=0; i<mockData.size(); i++)
-		mockData[i] = 0.;
+		mockData[i] = 0.2;
 
 	// Add each frequency
 	for(int i=0; i<numComponents; i++)
