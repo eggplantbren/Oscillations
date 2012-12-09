@@ -23,11 +23,11 @@
 #include "Data.h"
 #include <cmath>
 #include <iostream>
-#include <gsl/gsl_sf_gamma.h>
+
 using namespace std;
 using namespace DNest3;
 
-const int Whittle::maxNumComponents = 20;
+const int Whittle::maxNumComponents = 200;
 
 Whittle::Whittle()
 {
@@ -41,38 +41,35 @@ void Whittle::fromPrior()
 	mockData.assign(Data::get_instance().get_N(), 0.);
 
 	// Set limits on muAmplitudes
-	minLogMu = log(1E-3*Data::get_instance().get_ySig());
-	maxLogMu = minLogMu + log(1E4);
+	minLogMu = log(1E-3*Data::get_instance().get_y_mean());
+	maxLogMu = minLogMu + log(1E6);
 	rangeLogMu = maxLogMu - minLogMu;
 
 	// Set limits on frequencies
-	// Longest possible period = 10*data range
-	// Shortest possible period = 1E-4*longest period
-	minLogFreq = log(1./(10.*Data::get_instance().get_tRange()));
-	maxLogFreq = log(1E4) + minLogFreq;
-	rangeLogFreq = maxLogFreq - minLogFreq;
+	minFreq = Data::get_instance().get_x_min();
+	maxFreq = Data::get_instance().get_x_max();
+	rangeFreq = maxFreq - minFreq;
 
 	muAmplitudes = exp(minLogMu + rangeLogMu*randomU());
 	numComponents = randInt(maxNumComponents + 1);
 
 	frequencies.clear();
 	amplitudes.clear();
-	phases.clear();
-	double A, f, phi;
+	widths.clear();
+
+	double A, f, width;
 	for(int i=0; i<numComponents; i++)
 	{
 		A = -muAmplitudes*log(randomU());
-		f = exp(minLogFreq + rangeLogFreq*randomU());
-		phi = 2*M_PI*randomU();
+		f = minFreq + rangeFreq*randomU();
+		width = 3.*randomU();
 
-		addComponent(A, f, phi);
+		addComponent(A, f, width);
 		amplitudes.push_back(A);
 		frequencies.push_back(f);
-		phases.push_back(phi);
+		widths.push_back(width);
 	}
 
-	sigmaBoost = exp(log(1.) + log(100.)*randomU());
-	nu = exp(log(0.5) + log(200.)*randomU());
 }
 
 double Whittle::perturb1()
@@ -88,17 +85,17 @@ double Whittle::perturb1()
 
 	if(actual_diff > 0)
 	{
-		double A, f, phi;
+		double A, f, width;
 		for(int i=0; i<actual_diff; i++)
 		{
 			A = -muAmplitudes*log(randomU());
-			f = exp(minLogFreq + rangeLogFreq*randomU());
-			phi = 2*M_PI*randomU();
+			f = minFreq + rangeFreq*randomU();
+			width = 0.3*randomU();
 
-			addComponent(A, f, phi);
+			addComponent(A, f, width);
 			amplitudes.push_back(A);
 			frequencies.push_back(f);
-			phases.push_back(phi);
+			widths.push_back(width);
 			numComponents++;
 		}
 	}
@@ -109,10 +106,10 @@ double Whittle::perturb1()
 		{
 			which = randInt(numComponents);
 			addComponent(-amplitudes[which],
-					frequencies[which], phases[which]);
+					frequencies[which], widths[which]);
 			amplitudes.erase(amplitudes.begin() + which);
 			frequencies.erase(frequencies.begin() + which);
-			phases.erase(phases.begin() + which);
+			widths.erase(widths.begin() + which);
 			numComponents--;
 		}
 	}
@@ -137,14 +134,14 @@ double Whittle::perturb2()
 			{
 				if(chance < 1.)
 					addComponent(-amplitudes[i], frequencies[i],
-						phases[i]);
+						widths[i]);
 				temp = 1. - exp(-amplitudes[i]/muAmplitudes);
 				temp += scale*randn();
 				temp = mod(temp, 1.);
 				amplitudes[i] = -muAmplitudes*log(1. - temp);
 				if(chance < 1.)
 					addComponent(amplitudes[i], frequencies[i],
-						phases[i]);
+						widths[i]);
 			}
 		}
 	}
@@ -156,15 +153,15 @@ double Whittle::perturb2()
 			{
 				if(chance < 1.)
 					addComponent(-amplitudes[i], frequencies[i],
-						phases[i]);
-				temp = log(frequencies[i]);
-				temp += rangeLogFreq*scale*randn();
-				temp = mod(temp - minLogFreq, rangeLogFreq)
-					+ minLogFreq;
-				frequencies[i] = exp(temp);
+						widths[i]);
+
+				frequencies[i] += scale*rangeFreq*randn();
+				frequencies[i] = mod(frequencies[i] - minFreq, rangeFreq)
+							+ minFreq;
+
 				if(chance < 1.)
 					addComponent(amplitudes[i], frequencies[i],
-						phases[i]);
+						widths[i]);
 			}
 		}
 	}
@@ -176,12 +173,12 @@ double Whittle::perturb2()
 			{
 				if(chance < 1.)
 					addComponent(-amplitudes[i], frequencies[i],
-						phases[i]);
-				phases[i] += 2*M_PI*scale*randn();
-				phases[i] = mod(phases[i], 2*M_PI);
+						widths[i]);
+				widths[i] += 3.*scale*randn();
+				widths[i] = mod(widths[i], 3.);
 				if(chance < 1.)
 					addComponent(amplitudes[i], frequencies[i],
-						phases[i]);
+						widths[i]);
 			}
 		}
 	}
@@ -230,32 +227,11 @@ double Whittle::perturb3()
 	return logH;
 }
 
-double Whittle::perturb4()
-{
-	double logH = 0.;
-	int which = randInt(2);
-	if(which == 0)
-	{
-		sigmaBoost = log(sigmaBoost);
-		sigmaBoost += log(100.)*pow(10., 1.5 - 6.*randomU())*randn();
-		sigmaBoost = mod(sigmaBoost - log(1.), log(100.)) + log(1.);
-		sigmaBoost = exp(sigmaBoost);
-	}
-	else
-	{
-		nu = log(nu);
-		nu += log(200.)*pow(10., 1.5 - 6.*randomU())*randn();
-		nu = mod(nu - log(0.5), log(200.)) + log(0.5);
-		nu = exp(nu);
-	}
-	return logH;
-}
-
 double Whittle::perturb()
 {
 	double logH = 0.;
 
-	int which = randInt(4);
+	int which = randInt(3);
 	if(which == 0)
 	{
 		logH = perturb1();
@@ -268,10 +244,6 @@ double Whittle::perturb()
 	{
 		logH = perturb3();
 	}
-	else
-	{
-		logH = perturb4();
-	}
 
 	if(staleness > 1000)
 		calculateMockData();
@@ -281,18 +253,11 @@ double Whittle::perturb()
 
 double Whittle::logLikelihood() const
 {
-	double logL = mockData.size()*
-		(gsl_sf_lngamma((nu + 1.)/2) - gsl_sf_lngamma(nu/2)
-		-0.5*log(M_PI*nu));
+	double logL = 0.;
 
 	for(size_t i=0; i<mockData.size(); i++)
-	{
-		double y = Data::get_instance().get_y(i);
-		double sig = sigmaBoost*Data::get_instance().get_sig(i);
-		logL += -log(sig);
-		logL += -(nu+1.)/2*
-			log(1. + 1./nu*pow((y - mockData[i])/sig, 2));
-	}
+		logL += -log(mockData[i]) - Data::get_instance().get_y(i)/mockData[i];
+
 	return logL;
 }
 
@@ -304,25 +269,27 @@ void Whittle::calculateMockData()
 
 	// Add each frequency
 	for(int i=0; i<numComponents; i++)
-		addComponent(amplitudes[i], frequencies[i], phases[i]);
+		addComponent(amplitudes[i], frequencies[i], widths[i]);
 
 	staleness = 0;
 }
 
-void Whittle::addComponent(double amplitude, double frequency, double phase)
+void Whittle::addComponent(double amplitude, double frequency, double width)
 {
 	if(amplitude == 0.)
 		return;
 
 	for(size_t i=0; i<mockData.size(); i++)
-		mockData[i] += amplitude*sin(2*M_PI*frequency*
-				Data::get_instance().get_t(i) + phase);
+	{
+		mockData[i] += amplitude/(1. + pow(
+				(Data::get_instance().get_x(i) - frequency)/width
+				, 2));
+	}
 }
 
 void Whittle::print(std::ostream& out) const
 {
-	out<<numComponents<<' '<<muAmplitudes<<' ';
-	out<<sigmaBoost<<' '<<nu<<' '<<staleness<<' ';
+	out<<numComponents<<' '<<muAmplitudes<<' '<<staleness<<' ';
 
 	// Print amplitudes, use zero padding
 	for(int i=0; i<numComponents; i++)
@@ -336,17 +303,17 @@ void Whittle::print(std::ostream& out) const
 	for(int i=numComponents; i<maxNumComponents; i++)
 		out<<0<<' ';
 
-	// Print phases, use zero padding
+	// Print widths, use zero padding
 	for(int i=0; i<numComponents; i++)
-		out<<phases[i]<<' ';
+		out<<widths[i]<<' ';
 	for(int i=numComponents; i<maxNumComponents; i++)
 		out<<0<<' ';
 }
 
 string Whittle::description() const
 {
-	string result("numComponents, muAmplitudes, sigmaBoost, nu, staleness, ");
-	result += "amplitudes, frequencies, phases.";
+	string result("numComponents, muAmplitudes, staleness, ");
+	result += "amplitudes, frequencies, widths.";
 	return result;
 }
 

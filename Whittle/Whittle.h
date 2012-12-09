@@ -36,7 +36,7 @@ class Whittle:public DNest3::Model
 		double muAmplitudes, minLogMu, maxLogMu, rangeLogMu;
 
 		// Frequency limits
-		double minLogFreq, maxLogFreq, rangeLogFreq;
+		double minFreq, maxFreq, rangeFreq;
 
 		// Amplitudes
 		std::vector<double> amplitudes;
@@ -44,11 +44,8 @@ class Whittle:public DNest3::Model
 		// Actual frequencies
 		std::vector<double> frequencies;
 
-		// Actual phases
-		std::vector<double> phases;
-
-		// Error bar wrongness
-		double sigmaBoost, nu;
+		// Widths of Lorentzians
+		std::vector<double> widths;
 
 		// Simulated data for comparison with actual data
 		std::vector<double> mockData;
@@ -61,13 +58,12 @@ class Whittle:public DNest3::Model
 
 		// Add one frequency to mock data
 		void addComponent(double amplitude, double frequency,
-					double phase);
+					double width);
 
 		// Perturbers
 		double perturb1();
 		double perturb2();
 		double perturb3();
-		double perturb4();
 
 	public:
 		Whittle();

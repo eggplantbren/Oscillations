@@ -53,7 +53,10 @@ class Data
 		bool get_loaded() { return loaded; }
 		double get_x(int i) { return x[i]; }
 		double get_y(int i) { return y[i]; }
+		double get_x_min()   { return x_min; }
+		double get_x_max()   { return x_max; }
 		double get_x_range() { return (x_max - x_min); }
+		double get_y_mean()  { return y_mean; }
 		int get_N() { return static_cast<int>(y.size()); }
 
 	// Static stuff for singleton use
