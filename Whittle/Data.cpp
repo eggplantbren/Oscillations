@@ -35,7 +35,7 @@ Data::Data()
 
 void Data::load(const char* filename)
 {
-	f.clear();
+	x.clear();
 	y.clear();
 
 	fstream fin(filename, ios::in);
@@ -53,19 +53,24 @@ void Data::load(const char* filename)
 	double temp1, temp2;
 	while(fin>>temp1 && fin>>temp2)
 	{
-		f.push_back(temp1);
+		x.push_back(temp1);
 		y.push_back(temp2);
 	}
-	cout<<"# Loaded "<<f.size()<<" points from file "<<filename<<"."<<endl;
+	cout<<"# Loaded "<<x.size()<<" points from file "<<filename<<"."<<endl;
 	fin.close();
 
-	computeSummaries();
+	compute_summaries();
 	loaded = true;
 }
 
-void Data::computeSummaries()
+void Data::compute_summaries()
 {
-	fRange = *max_element(f.begin(), f.end())
-			- *min_element(f.begin(), f.end());
+	x_min = *min_element(x.begin(), x.end());
+	x_max = *max_element(x.begin(), x.end());
+
+	y_mean = 0.;
+	for(size_t i=0; i<y.size(); i++)
+		y_mean += y[i];
+	y_mean /= y.size();
 }
 

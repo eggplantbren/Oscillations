@@ -34,13 +34,13 @@ class Data
 		bool loaded;
 
 		// The data
-		std::vector<double> f, y;
+		std::vector<double> x, y;
 
-		// Summary statistics
-		double fRange;
+		// Some summaries
+		double x_min, x_max, y_mean;
 
 		// Compute the summary statistics from the data
-		void computeSummaries();
+		void compute_summaries();
 
 	public:
 		// Default constructor: Empty data
@@ -51,9 +51,9 @@ class Data
 
 		// Getters
 		bool get_loaded() { return loaded; }
-		double get_f(int i) { return f[i]; }
+		double get_x(int i) { return x[i]; }
 		double get_y(int i) { return y[i]; }
-		double get_fRange() { return fRange; }
+		double get_x_range() { return (x_max - x_min); }
 		int get_N() { return static_cast<int>(y.size()); }
 
 	// Static stuff for singleton use
