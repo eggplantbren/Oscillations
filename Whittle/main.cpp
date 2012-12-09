@@ -26,7 +26,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	Data::get_instance().load("fake_data.txt");
+	Data::get_instance().load("simulated_data.txt");
 	DNest3::start_mt<Whittle>(argc, argv);
 	return 0;
 }
