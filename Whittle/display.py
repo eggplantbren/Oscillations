@@ -24,5 +24,7 @@ for i in xrange(0, samples.shape[0]):
 	plt.hold(True)
 	plt.plot(data[:,0], data[:,1], 'b')
 	plt.plot(data[:,0], y, 'r')
+	plt.figure(2)
+	plt.hist(1. - np.exp(-data[:,1]/y), 100)
 	plt.show()
 
