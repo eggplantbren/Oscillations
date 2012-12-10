@@ -15,7 +15,7 @@ for i in xrange(0, samples.shape[0]):
 	which = A > 0.
 	A, f, w = A[which], f[which], w[which]
 
-	y = np.zeros(data.shape[0])
+	y = np.zeros(data.shape[0]) + 0.2
 	for j in xrange(0, A.size):
 		y += A[j]/(1. + ((data[:,0] - f[j])/w[j])**2)
 
