@@ -6,6 +6,9 @@ samples = np.atleast_2d(np.loadtxt('posterior_sample.txt'))
 data = np.loadtxt('simulated_data.txt')
 maxNumComponents = (samples.shape[1] - 3)//3
 
+plt.ion()
+plt.figure(figsize=(12, 6))
+
 for i in xrange(0, samples.shape[0]):
 	model = samples[i, 3:]
 
@@ -19,15 +22,20 @@ for i in xrange(0, samples.shape[0]):
 	for j in xrange(0, A.size):
 		y += A[j]/(1. + ((data[:,0] - f[j])/w[j])**2)
 
-	plt.figure(figsize=(12, 6))
-	plt.clf()
-	plt.hold(True)
+	plt.hold(False)
 	plt.plot(data[:,0], data[:,1], 'b', alpha=0.3, label='Data')
+	plt.hold(True)
 	plt.plot(data[:,0], y, 'r', label='Model')
 	plt.xlabel('Frequency ($\\mu$Hz)', fontsize=16)
 	plt.ylabel('Power', fontsize=16)
+	plt.title('Model ' + str(i+1))
 	plt.legend()
-	plt.figure(2)
-	plt.hist(1. - np.exp(-data[:,1]/y), 100)
-	plt.show()
+	plt.draw()
+
+plt.ioff()
+plt.show()
+
+#	plt.figure(2)
+#	plt.hist(1. - np.exp(-data[:,1]/y), 100)
+#	plt.show()
 
