@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 	rng.seed(0)
 
-	t = np.linspace(0., 100., 1001)
+	t = np.sort(100.*rng.randn(100))
 	y = np.zeros(t.shape)
 
 	# Number of components
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 		y += A[i]*np.sin(2*np.pi*f[i]*t + phi[i])
 
 	# Errorbars
-	sig = 1.*np.ones(t.size)
+	sig = 0.3*np.ones(t.size)
 
 	# Add noise
 	y += sig*rng.randn(t.size)
