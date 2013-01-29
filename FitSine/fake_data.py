@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 	rng.seed(0)
 
-	t = np.sort(100.*rng.randn(100))
+	t = np.sort(100.*rng.rand(500))
 	y = np.zeros(t.shape)
 
 	# Number of components
@@ -46,10 +46,16 @@ if __name__ == '__main__':
 		y += A[i]*np.sin(2*np.pi*f[i]*t + phi[i])
 
 	# Errorbars
-	sig = 0.3*np.ones(t.size)
+	sig = 0.1*np.ones(t.size)
 
 	# Add noise
 	y += sig*rng.randn(t.size)
+
+	which = t/40. - np.floor(t/40.) < 0.5
+	t = t[which]
+	y = y[which]
+	sig = sig[which]
+
 
 	np.savetxt('fake_data.txt', np.vstack([t, y, sig]).T)
 	plt.errorbar(t, y, yerr=sig, fmt='b.')

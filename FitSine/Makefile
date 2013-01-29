@@ -11,5 +11,5 @@ default:
 
 	# Link
 	g++ -o main *.o $(LIBS)
-	rm -f main *.o
+	rm -f *.o
 
