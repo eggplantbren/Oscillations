@@ -24,7 +24,5 @@ void Data::load(const char* filename)
 	}
 	fin.close();
 
-	for(size_t i=0; i<t.size(); i++)
-		cout<<t[i]<<' '<<Y[i]<<endl;
 }
 
