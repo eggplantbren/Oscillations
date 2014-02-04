@@ -20,7 +20,7 @@ void Data::load(const char* filename)
 	while(fin>>temp1 && fin>>temp2)
 	{
 		t.push_back(temp1);
-		Y.push_back(temp1);
+		Y.push_back(temp2);
 	}
 	fin.close();
 
