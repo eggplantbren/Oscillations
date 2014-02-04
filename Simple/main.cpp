@@ -18,6 +18,7 @@
 */
 
 #include <iostream>
+#include "Data.h"
 #include "Start.h"
 #include "MyModel.h"
 
@@ -26,12 +27,9 @@ using namespace DNest3;
 
 int main(int argc, char** argv)
 {
-	#ifndef DNest3_No_Boost
-	MTSampler<MyModel> sampler = setup_mt<MyModel>(argc, argv);
-	#else
-	Sampler<MyModel> sampler = setup<MyModel>(argc, argv);
-	#endif
+	Data::get_instance().load("data.txt");
 
+	MTSampler<MyModel> sampler = setup_mt<MyModel>(argc, argv);
 	sampler.run();
 	return 0;
 }

@@ -1,9 +1,12 @@
 #ifndef _Data_
 #define _Data_
 
+#include <vector>
+
 class Data
 {
 	private:
+		std::vector<double> t, Y;
 
 	public:
 		Data();
@@ -13,7 +16,7 @@ class Data
 	private:
 		static Data instance;
 	public:
-		static const Data& get_instance() { return instance; }
+		static Data& get_instance() { return instance; }
 };
 
 #endif
