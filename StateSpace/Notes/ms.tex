@@ -16,6 +16,9 @@
 \maketitle
 
 \section{Introduction}
+{\bf Apologies if anyone who knows this stuff is reading and I make any basic
+blunders. I'm just muddling my way through and am not an expert of this stuff.}\\
+
 The data are noisy measurements $\{Y_1, ..., Y_N\}$ at times
 $\{t_1, ..., t_N\}$ with noise standard deviations (``error bars'')
 $\{\sigma_1, ..., \sigma_N\}$. There is an underlying dynamics which is
@@ -27,19 +30,20 @@ Y_i = \left(\sum_{j=1}^M y_j(t)\right) + \epsilon_i
 where $\epsilon_i \sim \mathcal{N}(0, \sigma_i^2)$.
 Each of the $M$ signals satisfies the SDE
 \begin{eqnarray}
-dy_j &=& v_j dt\label{eq:sde1}\\
-dv_j &=& -\left[(2\pi\nu_j)^2y_j - \tau^{-1}v_j\right]dt + \beta dW_j\label{eq:sde2}
+dy_j &=& v_j \,dt\label{eq:sde1}\\
+dv_j &=& -\left[\omega_j^2y_j - \tau^{-1}v_j\right] \,dt + \beta \,dW_j\label{eq:sde2}
 \end{eqnarray}
 where $W_j(t)$ has a white noise prior probability distribution.
-
-{\bf Apologies if anyone who knows this stuff is reading and I make any basic
-blunders. I'm just muddling my way through and am not an expert of this stuff.}
 
 I think what we need is the Fokker-Planck equation for $Y(t)$, and its
 solutions. Let the probability density for $Y(t)$ at time $t$ be
 $\rho(Y; t)$. We need to figure out what Equations~\ref{eq:sde1}
 and~\ref{eq:sde2} imply about the evolution of $\rho(Y; t)$.
-
+To first order, we have
+\begin{eqnarray}
+y(t + h) &=& y(t) + h v(t)\\
+v(t + h) &=& v(t) - h\omega_j^2y_j(t) - h\tau^{-1}v_j(t) + \beta \,dW_j
+\end{eqnarray}
 
 \end{document}
 
