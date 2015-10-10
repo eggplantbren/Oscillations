@@ -41,9 +41,12 @@ $\rho(Y; t)$. We need to figure out what Equations~\ref{eq:sde1}
 and~\ref{eq:sde2} imply about the evolution of $\rho(Y; t)$.
 To first order, we have
 \begin{eqnarray}
-y(t + h) &=& y(t) + h v(t)\\
-v(t + h) &=& v(t) - h\omega_j^2y_j(t) - h\tau^{-1}v_j(t) + \beta \,dW_j
+Y(t+h) &=& Y(t) + h\sum_{i=1}^M v_j(t) + \sigma\,dW_{\rm noise}\\
+y_j(t + h) &=& y_j(t) + h v_j(t)\\
+v_j(t + h) &=& v_j(t) - h\omega_j^2y_j(t) - h\tau^{-1}v_j(t) + \beta \,dW_j
 \end{eqnarray}
+Since these are all linear, I think we can deduce that a joint PDF for
+everything at time $t$ that is gaussian will remain so at time $t+h$.
 
 \end{document}
 
