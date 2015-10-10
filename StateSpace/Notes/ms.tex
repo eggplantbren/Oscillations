@@ -1,11 +1,13 @@
 \documentclass[letterpaper, 11pt]{article}
 \usepackage{graphicx}
 \usepackage{natbib}
+\usepackage{amsmath}
 \usepackage[left=3cm,top=3cm,right=3cm]{geometry}
 
 \renewcommand{\topfraction}{0.85}
 \renewcommand{\textfraction}{0.1}
 \parindent=0cm
+\newcommand{\btheta}{\boldsymbol{\theta}}
 
 \title{Oscillations}
 \author{Brendon J. Brewer}
@@ -14,22 +16,21 @@
 \maketitle
 
 \section{Introduction}
-
+The data are noisy measurements $\{Y_1, ..., Y_N\}$ at times
+$\{t_1, ..., t_N\}$ with noise standard deviations (``error bars'')
+$\{\sigma_1, ..., \sigma_N\}$. There is an underlying dynamics which is
+given by the sum of $M$ damped, stochastically excited signals (modes)
+$\{y_j(t)\}$:
 \begin{eqnarray}
-\frac{d^2y}{dt^2} &=& -\omega^2 y - \frac{1}{\tau}\frac{dy}{dt}
-+ \beta N(t)\frac{1}{\sqrt{dt}}
+Y_i = \left(\sum_{j=1}^M y_j(t)\right) + \epsilon_i
 \end{eqnarray}
-where
+where $\epsilon_i \sim \mathcal{N}(0, \sigma_i^2)$.
+Each of the $M$ signals satisfies the SDE
 \begin{eqnarray}
-N(t) \sim \mathcal{N}(0, 1).
+dy_j &=& v_j dt\\
+dv_j &=& -\left[(2\pi\nu_j)^2y_j - \tau^{-1}v_j\right]dt + \beta dW
 \end{eqnarray}
-Letting $v = \frac{dy}{dt}$, this can be written:
-\begin{eqnarray}
-\frac{dy}{dt} &=& v \\
-\frac{dv}{dt} &=& -\omega^2 y - \frac{1}{\tau}\frac{dy}{dt}
-+ \beta N(t)\frac{1}{\sqrt{dt}}.
-\end{eqnarray}
-
+where $W(t)$ is white noise.
 
 \end{document}
 
