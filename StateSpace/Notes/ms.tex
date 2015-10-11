@@ -2,12 +2,14 @@
 \usepackage{graphicx}
 \usepackage{natbib}
 \usepackage{amsmath}
+\usepackage{dsfont}
 \usepackage[left=3cm,top=3cm,right=3cm]{geometry}
 
 \renewcommand{\topfraction}{0.85}
 \renewcommand{\textfraction}{0.1}
 \parindent=0cm
 \newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\E}{\mathds{E}}
 
 \title{Oscillations}
 \author{Brendon J. Brewer}
@@ -41,12 +43,21 @@ $\rho(Y; t)$. We need to figure out what Equations~\ref{eq:sde1}
 and~\ref{eq:sde2} imply about the evolution of $\rho(Y; t)$.
 To first order, we have
 \begin{eqnarray}
-Y(t+h) &=& Y(t) + h\sum_{i=1}^M v_j(t) + \sigma\,dW_{\rm noise}\\
+Y(t+h) &=& Y(t) + h\sum_{i=1}^M v_j(t) + \sigma(t)\,dW_{\rm noise}\\
 y_j(t + h) &=& y_j(t) + h v_j(t)\\
 v_j(t + h) &=& v_j(t) - h\omega_j^2y_j(t) - h\tau^{-1}v_j(t) + \beta \,dW_j
 \end{eqnarray}
 Since these are all linear, I think we can deduce that a joint PDF for
 everything at time $t$ that is gaussian will remain so at time $t+h$.
+
+Taking the expectation of everything (conditional on $Y(t)$), we get
+\begin{eqnarray}
+\E\left[Y(t+h)\right] &=& Y(t) + h\sum_{i=1}^M \E\left[v_j(t)\right]\\
+\E\left[y_j(t + h)\right] &=& \E\left[y_j(t)\right] + h\E\left[v_j(t)\right]\\
+\E\left[v_j(t + h)\right] &=& \E\left[v_j(t)\right] - h\omega_j^2\E\left[y_j(t)\right] - h\tau^{-1}\E\left[v_j(t)\right]
+\end{eqnarray}
+
+
 
 \end{document}
 
